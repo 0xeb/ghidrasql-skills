@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analysis"
+  short_description: "Triage binaries with ghidrasql query patterns"
+  default_prompt: "Use $analysis to triage a binary, surface high-signal functions, and summarize what stands out."

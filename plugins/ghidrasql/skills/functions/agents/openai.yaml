@@ -1,0 +1,4 @@
+interface:
+  display_name: "Functions"
+  short_description: "Look up ghidrasql SQL helper functions"
+  default_prompt: "Use $functions to find the right ghidrasql SQL helper for decompile, types, save, refresh, or local edits."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Types"
+  short_description: "Import and apply types through ghidrasql"
+  default_prompt: "Use $types to inspect type metadata, parse declarations, and apply signatures safely."

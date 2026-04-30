@@ -1,0 +1,4 @@
+interface:
+  display_name: "Debugger"
+  short_description: "Manage breakpoints and patch bytes through ghidrasql"
+  default_prompt: "Use $debugger to list, add, or modify breakpoints, and to apply or audit single-byte patches through memory_bytes."

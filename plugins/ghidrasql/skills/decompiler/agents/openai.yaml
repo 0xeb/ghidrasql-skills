@@ -1,0 +1,4 @@
+interface:
+  display_name: "Decompiler"
+  short_description: "Decompile functions and inspect locals safely"
+  default_prompt: "Use $decompiler to read pseudocode, inspect locals and params, and keep decompiler queries scoped safely."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Xrefs"
+  short_description: "Trace callers, callees, and string references"
+  default_prompt: "Use $xrefs to trace call relationships, imports, and string-reference paths."

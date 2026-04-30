@@ -1,0 +1,4 @@
+interface:
+  display_name: "Connect"
+  short_description: "Start ghidrasql sessions and route workflows"
+  default_prompt: "Use $connect to bootstrap a ghidrasql session, verify the live source, and route me to the right skill."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Re-Source"
+  short_description: "Recursive bottom-up source recovery methodology"
+  default_prompt: "Use $re-source to drive a bottom-up annotation campaign — pick leaf callees first, annotate, walk up the call graph, refining types iteratively."

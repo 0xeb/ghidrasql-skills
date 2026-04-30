@@ -1,0 +1,4 @@
+interface:
+  display_name: "Grep"
+  short_description: "Find symbols and functions by pattern"
+  default_prompt: "Use $grep to find functions, symbols, imports, exports, or type names by pattern."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Annotations"
+  short_description: "Apply persistent ghidrasql annotations safely"
+  default_prompt: "Use $annotations to rename, comment, retype, verify, and save Ghidra changes through ghidrasql."

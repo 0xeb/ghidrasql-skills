@@ -1,0 +1,4 @@
+interface:
+  display_name: "Data"
+  short_description: "Search strings, bytes, and typed data"
+  default_prompt: "Use $data to inspect strings, memory bytes, hexdumps, and typed data items."
