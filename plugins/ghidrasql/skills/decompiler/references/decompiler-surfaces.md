@@ -88,4 +88,4 @@ See the main skill file for the full table. Critical reminder: `ctree*` views ar
 
 ## Reminder
 
-Decompiler-backed tables are on-demand surfaces. Keep them tightly scoped by `func_addr`. In one-shot mode, each query rebuilds the relevant tables; inside a batched script, drop the cache after a write (`SELECT cache_invalidate('pseudocode');`) before re-reading.
+Decompiler-backed tables are on-demand surfaces. Keep them tightly scoped by `func_addr`. In libghidra live mode, materialized rows can be reused while the native freshness token is unchanged and refresh automatically after host-side edits change Ghidra's modification number or after the active program changes. Inside a batched script, drop the cache after a write (`SELECT cache_invalidate('pseudocode');`) before re-reading when you need an explicit rebuild.

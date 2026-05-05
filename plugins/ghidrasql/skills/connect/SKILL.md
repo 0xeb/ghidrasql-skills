@@ -55,7 +55,7 @@ SELECT local_id, name, type FROM decomp_lvars WHERE func_addr = 0x401000;
 
 ### 2. Anti-Guessing
 
-Use `.tables`, `.schema <table>`, and `PRAGMA table_xinfo(<table>)` before issuing uncertain queries. ghidrasql exposes 58 virtual tables, 73 views, and 22 SQL functions — when a query fails, introspect first, then retry.
+Use `.tables`, `.schema <table>`, and `PRAGMA table_xinfo(<table>)` before issuing uncertain queries. ghidrasql exposes 60 virtual tables, 73 views, and 22 SQL functions — when a query fails, introspect first, then retry.
 
 ```sql
 SELECT type, name, ncol FROM pragma_table_list WHERE schema='main';
@@ -105,11 +105,12 @@ See [references/cost-model.md](references/cost-model.md) for the full table with
 | Symptom | Fix |
 |---|---|
 | `funcs` returns 0 rows | Program isn't bound — pass `--program <name>` (or `--binary` to import) and restart the host |
+| Need to see every program in a project | Run `ghidrasql ... --list-project-programs`, or query `SELECT path,name FROM project_programs ORDER BY path;` |
 | `--url` rejected with "mutually exclusive" | `unset GHIDRA_INSTALL_DIR` (or `env -u GHIDRA_INSTALL_DIR ghidrasql --url ...`) and retry |
 | `analyzeHeadless` never prints `LIBGHIDRA_HEADLESS_READY` | Check the log for an exception, port conflict (18080 RPC, 8081 SQL), or unsupported binary format |
 | Stale `*.lock` / `*.lock~` after force-kill | Confirm `java.exe` is gone, then delete both lock files |
 | GUI host stalls under concurrent decompiler reads | Overlapping requests against `pseudocode`/`decomp_lvars`/`decomp_comments` can deadlock the host on a fair `ReentrantReadWriteLock`. Workaround: serialise decompiler-backed queries against the same host; do not run two ghidrasql clients hitting decompiler tables in parallel |
-| Query returns stale rows after a write inside a batched script | `SELECT cache_invalidate('<table>');` (or `refresh_database()`) before the read. In one-shot mode (one statement per `/query`), each query rebuilds its tables anyway — staleness only bites inside a batch |
+| Query returns stale rows after a write or external edit | Check `SELECT program_revision()` and `SELECT cache_stats();`. Libghidra live sources refresh automatically when the native freshness token changes; use `SELECT cache_invalidate('<table>');` or `refresh_database()` to force a rebuild, especially inside batched scripts |
 | Host hangs after a wide `comments` range query | `getComments()` over wide ranges can hang the host. Use exact-address `WHERE address = X` instead of range scans |
 | `/query` HTTP layer wedges while `/health` still answers | Recovery path: spawn a fresh `ghidrasql --url http://127.0.0.1:<rpc-port>` directly against the LibGhidraHost RPC port (`unset GHIDRA_INSTALL_DIR` first if set). The new process bypasses the wedged HTTP layer and can run `SELECT save_database()` to commit pending state before the orphaned tree is killed |
 | Individual RPC wedges (e.g. a pathological signature parse) tie up the worker | Lower the per-RPC timeout via `--rpc-timeout-ms <N>` (default 0 → libghidra's 120 s). Wedged calls fail with a timeout error and the worker frees up; observable via `/health/deep` |
@@ -152,6 +153,34 @@ ghidrasql --ghidra <ghidra_dist> \
           -q "SELECT name FROM funcs LIMIT 5;"
 ```
 
+Use Ghidra domain paths for multi-program projects:
+
+```bash
+ghidrasql --ghidra <ghidra_dist> \
+          --project <project_dir> --project-name <name> \
+          --program /samples/payload.exe --no-analyze \
+          -q "SELECT * FROM db_info;"
+```
+
+`--binary` and `--program` are repeatable. A host still has one active program; choose it with `--initial-program` when importing or naming more than one target:
+
+```bash
+ghidrasql --ghidra <ghidra_dist> \
+          --project <project_dir> --project-name <name> \
+          --binary loader.dll --binary payload.exe \
+          --initial-program /payload.exe --http
+```
+
+List project programs without changing the program-scoped SQL model:
+
+```bash
+ghidrasql --url http://127.0.0.1:18080 --list-project-programs
+ghidrasql --url http://127.0.0.1:18080 \
+  -q "SELECT path,name,folder_path FROM project_programs ORDER BY path;"
+```
+
+All analysis tables (`funcs`, `pseudocode`, `xrefs`, etc.) describe the active program only. To switch, save/close and reopen a different domain path, or re-invoke `ghidrasql` with another `--program`.
+
 ### Background HTTP SQL server (the "keep it running" recipe)
 
 ```bash
@@ -172,7 +201,7 @@ ghidrasql --ghidra <ghidra_dist> \
 
 Wrong: `curl -X POST http://127.0.0.1:18080/query ...` — the upstream port speaks RPC, not SQL.
 
-The SQL HTTP server exposes seven endpoints:
+The SQL HTTP server exposes nine endpoints:
 
 | Method | Path | Purpose |
 |---|---|---|

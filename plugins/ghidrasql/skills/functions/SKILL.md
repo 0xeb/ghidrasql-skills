@@ -66,7 +66,7 @@ SELECT type_strip_cv('const volatile int *');                -- strips const/vol
 
 ```sql
 SELECT hex(0x401000);                                        -- '0x401000'
-SELECT program_revision();                                   -- engine revision counter
+SELECT program_revision();                                   -- Ghidra native modification number
 SELECT string_count();                                       -- live string-table size
 SELECT rebuild_strings();                                    -- refresh string table
 ```
@@ -81,7 +81,7 @@ SELECT refresh_database();                                   -- invalidate cache
 
 ### Cache helpers
 
-Materialisation is query-scoped in normal one-shot use — each `/query` (or `-q`) rebuilds the tables it touches. The cache helpers matter mainly inside a batched script (`-f`, multi-statement REPL input) where the cache persists across statements:
+Materialisation is freshness-token scoped for libghidra live sources: repeated `/query` calls can reuse table rows while `program_id`, Ghidra's modification number, program path, and available file metadata are unchanged. External Ghidra UI/API edits or active-program switches refresh on the next query. Cache helpers matter mainly inside a batched script (`-f`, multi-statement REPL input) or when forcing a surface to rebuild:
 
 ```sql
 SELECT cache_stats();                                        -- JSON: invalidations_total, revision, cacheable tables

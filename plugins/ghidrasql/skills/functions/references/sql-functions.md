@@ -24,7 +24,7 @@ ORDER BY name, narg;
 
 - `decompile(func_addr)` — returns the full pseudocode text. **Single argument only — no force-flag.** Faster than `SELECT text FROM pseudocode WHERE func_addr = ...` when you only need the text.
 
-In one-shot use each `/query` rebuilds its tables, so a `decompile()` call after a write already reflects the write. Inside a batched script, drop the cached surface first:
+On libghidra live sources, `decompile()` results are reused while the native freshness token is unchanged and refreshed automatically after ghidrasql edits, external host edits, or active-program switches. Inside a batched script, drop the cached surface first when you need to force a rebuild:
 
 ```sql
 SELECT cache_invalidate('pseudocode');
@@ -57,7 +57,7 @@ SELECT decompile(0x401000);
 ## Formatting / Housekeeping
 
 - `hex(value)` — `"0x"`-prefixed uppercase hex string for an int64. Note: SQLite ships its own `hex()` (returns lowercase BLOB hex). ghidrasql overrides for int64 inputs; verify with `SELECT hex(0x401000)` returning `"0x401000"`.
-- `program_revision()` — engine session revision counter. Matches `db_info.revision`.
+- `program_revision()` — Ghidra's native modification number for live sources. Matches `db_info.revision`.
 - `string_count()` — live count of detected strings.
 - `rebuild_strings()` — refresh string-table cache and return new count.
 
@@ -71,11 +71,11 @@ SELECT decompile(0x401000);
 
 These three are real SQL functions — `pragma_function_list` shows them.
 
-- `cache_stats()` — returns a JSON string with `cache_invalidations_total` (cumulative counter), `last_seen_revision`, `source_revision`, `schema_tables` (list of cacheable tables).
-- `cache_invalidate('<table>')` — drop one table's cache so the next read inside the same batch pulls fresh data. Returns `0`/`1`.
+- `cache_stats()` — returns a JSON string with `cache_invalidations_total` (cumulative counter), `last_seen_freshness_token`, `source_freshness_token`, revision compatibility fields, and `schema_tables` (list of cacheable tables).
+- `cache_invalidate('<table>')` — drop one table's cache so the next read pulls fresh data. Returns `0`/`1`.
 - `cache_invalidate_all()` — drop every cached table. Returns `0`/`1`.
 
-**When this matters:** materialisation is **query-scoped** in normal one-shot use — every `/query` call (or `-q "..."`) rebuilds whatever tables it touches and discards them when the statement returns. The cache helpers only have an effect **inside a batched script** (`-f`, multi-statement REPL input) where the same materialisation persists across statements.
+**When this matters:** materialisation is **freshness-token scoped** for libghidra live sources. Repeated `/query` calls can reuse rows while `program_id`, Ghidra's modification number, program path, and available file metadata are unchanged. External Ghidra UI/API edits and active-program switches refresh automatically on the next query. Custom sources without freshness tracking still invalidate on every one-shot query. Cache helpers are most useful inside batched scripts (`-f`, multi-statement REPL input) or when forcing one surface to rebuild.
 
 Worked example inside a batch (`-f`):
 
@@ -89,5 +89,5 @@ WHERE func_addr = 0x401000;
 ## Notes
 
 - Saving is explicit. **Nothing auto-commits** — even after `parse_decls()`, `rename_local()`, `set_local_type()` you still need `save_database()` to persist.
-- `parse_decls()`, `rename_local()`, `set_local_type()` already go through the Ghidra type system / decompiler — in one-shot use, the next query already sees the new state. Inside a batch script, `cache_invalidate('<table>')` between the write and a re-read is the right tool.
+- `parse_decls()`, `rename_local()`, `set_local_type()` already go through the Ghidra type system / decompiler and trigger cache invalidation. Inside a batch script, `cache_invalidate('<table>')` between the write and a re-read is still a useful explicit rebuild point.
 - There is **no `shutdown(...)` SQL function**. Stop the server with `POST /shutdown`; the launch-time `--shutdown save|discard|none` policy decides what happens to the project on exit in managed mode (in proxy mode the upstream host is untouched).

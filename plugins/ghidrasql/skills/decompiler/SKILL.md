@@ -59,9 +59,9 @@ SELECT ordinal, param_name, param_type FROM function_params WHERE func_addr = 0x
 
 ## Cache and Refresh
 
-`decompile()` is **1-arg only — there is no force-flag**. In normal one-shot use (one `/query` call per statement, or `-q "..."`), each call rebuilds its tables, so a fresh `decompile()` after a write already reflects the write — no cache dance is needed.
+`decompile()` is **1-arg only — there is no force-flag**. With a libghidra live source, table materialisation can be reused across one-shot `/query` calls while the native freshness token is unchanged. Writes through ghidrasql and external Ghidra/libghidra edits change Ghidra's modification number, while program switches change `program_id`, so the next query invalidates before reading. Custom sources without freshness tracking still invalidate on every one-shot query.
 
-The cache_invalidate dance only matters **inside a batched script** (`-f script.sql`, multi-statement REPL input) where materialisation persists across statements:
+The cache_invalidate dance mostly matters **inside a batched script** (`-f script.sql`, multi-statement REPL input) or when you want to force one surface to rebuild:
 
 ```sql
 -- inside a -f script:
@@ -71,7 +71,7 @@ SELECT cache_invalidate('decomp_lvars');
 SELECT decompile(0x401000);
 ```
 
-`cache_invalidate('<table>')` is cheaper than `refresh_database()` (which also re-reads program metadata) when only one surface is stale.
+`cache_invalidate('<table>')` is cheaper than `refresh_database()` when only one surface is stale. Use `refresh_database()` when you want to force a full source refresh regardless of revision.
 
 ## Concurrency Caveat
 
@@ -165,7 +165,7 @@ ORDER BY depth;
 
 - **Query is slow or appears stuck.** Confirm `WHERE func_addr = X` is present. Without it you triggered a full-program decompile.
 - **Locals do not look writable.** Query `decomp_lvars` again and use the exact `local_id` from the result (don't synthesise `arg0`, query for it).
-- **Mutation happened but `pseudocode` still looks stale.** Only happens inside a batched script — the next one-shot `/query` rebuilds the cache. Inside a batch: `SELECT cache_invalidate('pseudocode'); SELECT decompile(0xX);` and re-read.
+- **Mutation happened but `pseudocode` still looks stale.** Check `program_revision()` and `cache_stats()`. Libghidra live sources refresh after Ghidra's native modification number or the program identity changes; inside a batch or when forcing a rebuild: `SELECT cache_invalidate('pseudocode'); SELECT decompile(0xX);` and re-read.
 - **Two parallel decompiler queries hung the host.** Kill `java.exe`, delete `*.lock` / `*.lock~`, restart the host, run sequentially.
 
 ## Additional Resources

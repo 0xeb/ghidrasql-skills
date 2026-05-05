@@ -32,6 +32,19 @@ A binary becomes readable when its callees are readable. Pick leaf functions fir
 
 Cross-function struct correlation: a single function rarely reveals a full struct layout. Function `A(s)` might only read `s->flags`; `B(s)` reads `s->name`; `C(s)` writes `s->size`. The struct's full layout is the union of every accessor — which means you have to **look at multiple callers and callees of the same function** to discover all fields. The `ctree*` views and `decomp_tokens` are how you find those access patterns.
 
+Project scope: ghidrasql can list many programs in one Ghidra project via
+`project_programs`, but every analysis table in this workflow is scoped to the
+one active program. For a multi-program campaign, list targets first, then work
+one domain path at a time:
+
+```sql
+SELECT path, name FROM project_programs ORDER BY path;
+```
+
+Switch programs by saving/closing and reopening a different path, or by
+re-invoking `ghidrasql --program /path/in/project`. Do not mix progress tags
+from different active programs unless your tag names include the program path.
+
 ## Phase 1 — Pick the Seed Set
 
 The cheapest seed is leaf functions. ghidrasql exposes two leaf-function views:
@@ -175,7 +188,7 @@ WHERE param_type = 'void *' AND ordinal = 0
 Re-decompile each affected function and verify the new field accesses look right:
 
 ```sql
--- one-shot mode: each query rebuilds the cache, so just re-decompile
+-- libghidra live mode: reuses cache until the native freshness token changes, then refreshes automatically
 SELECT decompile(<callee_addr>);  -- substitute each affected callee
 
 -- inside a batched script, drop the cache first so the re-decompile sees fresh data:

@@ -146,7 +146,7 @@ Tag deletion cascades through both tables: `DELETE FROM function_tags WHERE name
   ```
   which goes through a direct RPC and ignores the type.
 - **Unsigned C type aliases (`uint8_t`/`uint16_t`/`uint32_t`/`unsigned`/`unsigned int`)** are mis-mapped in older builds of `parse_decls()`. Current builds resolve them correctly; if you hit a width mismatch, suspect an outdated build.
-- **Caches can hold stale rows inside a batched script.** Materialisation is query-scoped in normal one-shot mode (each `/query` rebuilds the tables it touches), so a fresh read after a write already reflects the write. Inside a `-f` script or multi-statement REPL input, however, the cache persists across statements — drop just the table you wrote to before reading it again:
+- **Caches are freshness-token scoped on libghidra live sources.** One-shot reads can reuse materialised tables while the native token is unchanged. Writes through ghidrasql and external Ghidra/libghidra edits change Ghidra's modification number, while program switches change `program_id`, so the next query refreshes automatically. Inside a `-f` script or multi-statement REPL input, drop just the table you wrote to before reading it again when you need to force a rebuild:
   ```sql
   SELECT cache_invalidate('decomp_lvars');
   ```

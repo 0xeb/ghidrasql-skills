@@ -32,18 +32,18 @@ For function-scoped questions, the post-filter scan tables have view shortcuts t
 
 ## Cache scope
 
-Materialisation is **query-scoped, not session-scoped**. Each `/query` call (and each one-shot `-q` invocation) rebuilds whatever tables it touches and drops them when the statement returns. Two consecutive `/query` calls touching the same table both pay the build cost — there is no sticky session-level cache to lean on.
+Materialisation is **freshness-token scoped** for libghidra live sources. Two `/query` calls against the same active program can reuse cached table rows while `program_id`, Ghidra's native modification number, program path, and available file metadata are unchanged. If the Ghidra UI or another libghidra client edits the active program, or the active program switches, the next query invalidates before reading. Custom sources without an explicit freshness token keep the old conservative behaviour: every one-shot query invalidates first.
 
-Inside a **batched script** (`-f script.sql`, multi-statement REPL input), the same materialisation persists across statements until you explicitly invalidate it or the script ends. That is the only context where stale-cache concerns arise.
+Inside a **batched script** (`-f script.sql`, multi-statement REPL input), writes and revision changes force invalidation before later reads. Explicit cache helpers are still useful when you want to drop a specific table before a later statement in the same batch.
 
 | Function | Effect |
 |---|---|
-| `cache_stats()` | Returns JSON: cumulative `cache_invalidations_total`, `last_seen_revision`, `source_revision`, list of cacheable tables |
-| `cache_invalidate('<table>')` | Inside a batch, drop one table's cache so the next read inside the same batch pulls fresh data. No-op (effectively) in one-shot mode — the next query rebuilds anyway. |
+| `cache_stats()` | Returns JSON: cumulative `cache_invalidations_total`, `last_seen_revision`, `source_revision`, `revision_tracked`, list of cacheable tables |
+| `cache_invalidate('<table>')` | Drop one table's cache so the next read pulls fresh data. Most useful in batched scripts or after source-specific uncertainty. |
 | `cache_invalidate_all()` | Same as above for every table |
-| `refresh_database()` | Re-reads program metadata from the upstream RPC and invalidates everything. Use after the upstream program revision changes. |
+| `refresh_database()` | Forces source refresh and invalidates everything. Use when you want to bypass revision-gated reuse. |
 
-Practical implication: when an agent issues one statement at a time through `/query`, `cache_invalidate` calls are belt-and-suspenders — harmless but rarely necessary. They are essential when authoring a `-f` script that writes through one path and reads through another in the same batch.
+Practical implication: with a normal libghidra host, one-shot `/query` calls stay fresh across external GUI/API edits because revision changes invalidate automatically. Use `refresh_database()` only when you suspect the source did not advertise a revision change.
 
 ## Worked timing example
 

@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "ghidrasql",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "description": "Skills for querying, decompiling, and annotating Ghidra databases through ghidrasql",
       "author": {
         "name": "Elias Bachaalany",

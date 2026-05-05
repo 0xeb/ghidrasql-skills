@@ -7,6 +7,7 @@ Claude Code skills for `ghidrasql`, a live SQL interface for Ghidra analysis and
 - A Ghidra project with the `LibGhidraHost` extension installed and running when you need live queries
 - `ghidrasql` available on your PATH or callable from a known location
 - Verify: `ghidrasql --help`
+- For multi-program projects, use `--list-project-programs` or the `project_programs` table, then select one active domain path with `--program` / `--initial-program`
 
 ## Installation
 

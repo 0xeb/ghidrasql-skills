@@ -139,5 +139,5 @@ VALUES (0x401234, 'Note', 'patch', 'NOPed magic check at the entry to authValida
 
 ## Failure and Recovery
 
-- **`UPDATE memory_bytes` returned without error but the byte didn't change.** In one-shot mode, re-read the same address (each query rebuilds the cache anyway). Inside a batched script, drop the cache first (`SELECT cache_invalidate('memory_bytes');`) and then re-read. If the address is in a non-writable segment (e.g. `.rdata` mapped read-only), Ghidra accepts the write into its program model but a runtime debugger may refuse to apply it.
+- **`UPDATE memory_bytes` returned without error but the byte didn't change.** Re-read the same address and check `program_revision()` / `cache_stats()`. Libghidra live sources refresh automatically when Ghidra's native modification number or program identity changes; inside a batched script, drop the cache first (`SELECT cache_invalidate('memory_bytes');`) and then re-read. If the address is in a non-writable segment (e.g. `.rdata` mapped read-only), Ghidra accepts the write into its program model but a runtime debugger may refuse to apply it.
 - **Breakpoint did not appear.** Check that the address is inside a known function (`SELECT * FROM funcs WHERE address <= 0xN AND end_ea > 0xN;`); breakpoints set on data are often dropped by Ghidra.

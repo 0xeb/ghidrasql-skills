@@ -5,7 +5,7 @@
 Two distinct HTTP-speaking services in a normal live setup:
 
 - **`LibGhidraHost` RPC**, default `http://127.0.0.1:18080` — speaks protobuf RPC, **not** SQL. Only `ghidrasql` should connect here.
-- **`ghidrasql` SQL HTTP server**, default `http://127.0.0.1:8081` — raw SQL via `POST /query` plus six other endpoints.
+- **`ghidrasql` SQL HTTP server**, default `http://127.0.0.1:8081` — raw SQL via `POST /query` plus eight other endpoints.
 
 `ghidrasql --url http://127.0.0.1:18080` is the right way to issue SQL through the upstream host: the CLI speaks the RPC dialect and runs the SQL engine locally.
 
@@ -24,7 +24,7 @@ Wrong (18080 is RPC, not SQL):
 curl -X POST http://127.0.0.1:18080/query --data "..."
 ```
 
-## All Endpoints (7)
+## All Endpoints (9)
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -138,6 +138,21 @@ ghidrasql --ghidra "$GHIDRA_INSTALL_DIR" \
           --program <prog>.exe --no-analyze \
           --http --port 8081 --max-runtime 0 &
 ```
+
+In a multi-program project, pass a Ghidra domain path to `--program` and use
+`--initial-program` when several imports/programs are supplied:
+
+```bash
+ghidrasql --ghidra "$GHIDRA_INSTALL_DIR" \
+          --project <project_dir> --project-name <name> \
+          --binary loader.dll --binary payload.exe \
+          --initial-program /payload.exe \
+          --http --port 8081 --max-runtime 0 &
+```
+
+Discover project contents with `--list-project-programs` or the metadata tables
+`project_files` and `project_programs`. All other SQL tables remain scoped to
+the one active program.
 
 ghidrasql owns both the SQL server *and* the upstream Java host. Send raw SQL to the proxy:
 
