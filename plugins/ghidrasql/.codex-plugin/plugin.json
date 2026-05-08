@@ -1,0 +1,40 @@
+{
+  "name": "ghidrasql",
+  "version": "0.0.2",
+  "description": "GhidraSQL skills for live SQL analysis, decompilation, and annotation workflows.",
+  "author": {
+    "name": "Elias Bachaalany",
+    "email": "elias.bachaalany@gmail.com"
+  },
+  "homepage": "https://github.com/0xeb/ghidrasql-skills",
+  "repository": "https://github.com/0xeb/ghidrasql-skills",
+  "license": "MPL-2.0",
+  "keywords": [
+    "ghidra",
+    "reverse-engineering",
+    "sql",
+    "decompilation",
+    "binary-analysis",
+    "ghidrasql"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "GhidraSQL",
+    "shortDescription": "Analyze and annotate Ghidra projects with ghidrasql",
+    "longDescription": "GhidraSQL provides Codex skills for connecting to ghidrasql, querying program structure, decompiling, tracing xrefs, inspecting data, managing types, and applying annotations.",
+    "developerName": "Elias Bachaalany",
+    "category": "Engineering",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/0xeb/ghidrasql-skills",
+    "privacyPolicyURL": "https://github.com/0xeb/ghidrasql-skills",
+    "termsOfServiceURL": "https://github.com/0xeb/ghidrasql-skills",
+    "defaultPrompt": [
+      "Analyze this Ghidra project with ghidrasql"
+    ],
+    "brandColor": "#4B6F44",
+    "screenshots": []
+  }
+}

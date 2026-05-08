@@ -1,6 +1,6 @@
 # ghidrasql-skills
 
-Claude Code skills for `ghidrasql`, a live SQL interface for Ghidra analysis and annotation workflows.
+Claude Code and Codex skills for `ghidrasql`, a live SQL interface for Ghidra analysis and annotation workflows.
 
 ## Prerequisites
 
@@ -11,14 +11,33 @@ Claude Code skills for `ghidrasql`, a live SQL interface for Ghidra analysis and
 
 ## Installation
 
+### Claude Code
+
 ```bash
 /plugin marketplace add 0xeb/ghidrasql-skills
 ```
 
+### Codex
+
+The repository is also structured as a Codex plugin. The Codex plugin manifest lives at:
+
+```text
+plugins/ghidrasql/.codex-plugin/plugin.json
+```
+
+The Codex marketplace entry lives at:
+
+```text
+.agents/plugins/marketplace.json
+```
+
+When installed as a Codex plugin, skills are namespaced under `ghidrasql`, for example `ghidrasql:connect`, `ghidrasql:analysis`, and `ghidrasql:decompiler`.
+
 ## Compatibility
 
 - `SKILL.md` is the canonical contract for each skill.
-- `agents/openai.yaml` adds optional Codex app metadata and does not replace `SKILL.md`.
+- `.claude-plugin/marketplace.json` keeps Claude Code marketplace compatibility.
+- `.agents/plugins/marketplace.json` and `plugins/ghidrasql/.codex-plugin/plugin.json` add Codex plugin compatibility.
 
 ## Skills
 

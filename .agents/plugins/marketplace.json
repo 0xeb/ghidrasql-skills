@@ -1,0 +1,20 @@
+{
+  "name": "ghidrasql-tools",
+  "interface": {
+    "displayName": "GhidraSQL Tools"
+  },
+  "plugins": [
+    {
+      "name": "ghidrasql",
+      "source": {
+        "source": "local",
+        "path": "./plugins/ghidrasql"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Engineering"
+    }
+  ]
+}
