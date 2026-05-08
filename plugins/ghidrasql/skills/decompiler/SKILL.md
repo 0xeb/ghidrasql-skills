@@ -75,7 +75,7 @@ SELECT decompile(0x401000);
 
 ## Concurrency Caveat
 
-**Do not run two ghidrasql clients hitting decompiler tables on the same host in parallel.** Overlapping requests against `pseudocode`/`decomp_lvars`/`decomp_comments` can deadlock the host on a fair `ReentrantReadWriteLock`. Symptoms: queries stop returning, threads in `getComments` / `decompileFunction` are parked. Workaround: serialise decompiler-backed work, or kill `java.exe` and restart if already stuck.
+**Do not run two ghidrasql clients hitting decompiler tables on the same host in parallel.** Overlapping requests against `pseudocode`/`decomp_lvars`/`decomp_comments` can deadlock the host on a fair `ReentrantReadWriteLock`. Symptoms: queries stop returning, threads in `getComments` / `decompileFunction` are parked. Workaround: serialise decompiler-backed work, or kill the specific `java.exe` PID and restart if already stuck. **Never kill by image name** (`taskkill /IM java.exe`) — that destroys all JVMs on the machine, including other concurrent ghidrasql sessions.
 
 ## Common Patterns
 
@@ -166,7 +166,7 @@ ORDER BY depth;
 - **Query is slow or appears stuck.** Confirm `WHERE func_addr = X` is present. Without it you triggered a full-program decompile.
 - **Locals do not look writable.** Query `decomp_lvars` again and use the exact `local_id` from the result (don't synthesise `arg0`, query for it).
 - **Mutation happened but `pseudocode` still looks stale.** Check `program_revision()` and `cache_stats()`. Libghidra live sources refresh after Ghidra's native modification number or the program identity changes; inside a batch or when forcing a rebuild: `SELECT cache_invalidate('pseudocode'); SELECT decompile(0xX);` and re-read.
-- **Two parallel decompiler queries hung the host.** Kill `java.exe`, delete `*.lock` / `*.lock~`, restart the host, run sequentially.
+- **Two parallel decompiler queries hung the host.** Kill the specific `java.exe` PID (not by image name — `taskkill /IM java.exe` would kill all JVMs including other concurrent sessions), delete `*.lock` / `*.lock~`, restart the host, run sequentially.
 
 ## Additional Resources
 
