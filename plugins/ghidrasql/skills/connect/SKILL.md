@@ -108,7 +108,7 @@ See [references/cost-model.md](references/cost-model.md) for the full table with
 | Need to see every program in a project | Run `ghidrasql ... --list-project-programs`, or query `SELECT path,name FROM project_programs ORDER BY path;` |
 | `--url` rejected with "mutually exclusive" | `unset GHIDRA_INSTALL_DIR` (or `env -u GHIDRA_INSTALL_DIR ghidrasql --url ...`) and retry |
 | `analyzeHeadless` never prints `LIBGHIDRA_HEADLESS_READY` | Check the log for an exception, port conflict (18080 RPC, 8081 SQL), or unsupported binary format |
-| Stale `*.lock` / `*.lock~` after force-kill | Confirm `java.exe` is gone, then delete both lock files |
+| Stale `*.lock` / `*.lock~` after force-kill | Confirm the owning `java.exe` PID is gone, then delete both lock files. **Never `taskkill /IM java.exe`** — that kills all JVMs on the machine, including other concurrent ghidrasql sessions. Target the specific PID instead |
 | GUI host stalls under concurrent decompiler reads | Overlapping requests against `pseudocode`/`decomp_lvars`/`decomp_comments` can deadlock the host on a fair `ReentrantReadWriteLock`. Workaround: serialise decompiler-backed queries against the same host; do not run two ghidrasql clients hitting decompiler tables in parallel |
 | Query returns stale rows after a write or external edit | Check `SELECT program_revision()` and `SELECT cache_stats();`. Libghidra live sources refresh automatically when the native freshness token changes; use `SELECT cache_invalidate('<table>');` or `refresh_database()` to force a rebuild, especially inside batched scripts |
 | Host hangs after a wide `comments` range query | `getComments()` over wide ranges can hang the host. Use exact-address `WHERE address = X` instead of range scans |
@@ -235,6 +235,13 @@ curl -X POST http://127.0.0.1:8081/shutdown
 - **Proxy mode (`--url ... --http`):** ghidrasql owns only the SQL proxy. `/shutdown` stops the proxy. The upstream LibGhidraHost is **untouched** — it keeps running. Stop it via its own RPC or kill the Java process if you own it.
 
 **Never `taskkill /F` Java without saving first** — that discards changes since the last `save_database()` and leaves orphaned `*.lock` / `*.lock~` files in the project dir.
+
+**Never kill by image name in parallel workflows.** Commands like
+`taskkill /F /IM java.exe` or `taskkill /F /IM ghidrasql.exe` kill
+**every** instance on the machine, destroying other concurrent sessions.
+If you must kill a stuck process, target the specific PID only.  If a
+port is already occupied by another session, choose a different port —
+do not kill the occupant.
 
 ## What ghidrasql does NOT have
 
